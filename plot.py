@@ -24,7 +24,7 @@ def plot_cum_bids(ax, bids):
     ax.set_ylim(0, cum_bid_amount.iloc[-1] * bid_scale)
 
 
-def plot_bid_number_dist(ax, bids):
+def plot_bid_dist(ax, bids):
     """Number of bids in bid value range."""
     amount_by_sender = bids[['sender', 'amount']].groupby('sender').sum()
     bins = np.concatenate([[0], 10.**np.arange(-2, 4) * 2.5, [np.inf]])
@@ -46,22 +46,42 @@ def plot_bid_number_dist(ax, bids):
     ax.set_ylabel('Number of bids')
     ax2.set_ylabel('Total contributed amount [%]')
 
-def plot_bid_amount_dist(ax, bids):
-    """Total value of bids in value range."""
-    amount_by_sender = bids[['sender', 'amount']].groupby('sender').sum()
-    bins = np.arange(0)
-    bins = np.concatenate([[0], 10.**np.arange(-2, 4) * 2.5, [np.inf]])
-    total_amount = amount_by_sender.groupby(pd.cut(amount_by_sender['amount'], bins)).sum()
-    total_amount = total_amount.fillna(0)['amount']
-    width = np.diff(bins)
-    ax.bar(bins[:-1], total_amount, width=width, align='edge')
+def calc_autocorrelation(bids):
+    time_bin_size = 60  # 1 minute
+    bids['time_bin'] = bids['time'] // 60
+
+    bids_per_bin = bids.groupby('time_bin').size()
+    time_bins = np.arange(0, bids_per_bin.index[-1] + 1)
+    bids_per_bin = bids_per_bin.reindex(time_bins, fill_value=0)
+
+    tao = np.arange(1, 120)  # 2 hours
+    gamma = np.zeros(tao.shape)
+    for i in range(len(tao)):
+        for time_bin in time_bins[:-tao[-1]]:
+            gamma[i] += bids_per_bin[time_bin] * bids_per_bin[time_bin + tao[i]]
+
+    return tao, gamma
+
+
+def plot_corr(ax, bids):
+    tao1, gamma1 = calc_autocorrelation(bids[bids.time <= np.median(bids.time)])
+    tao2, gamma2 = calc_autocorrelation(bids[bids.time > np.median(bids.time)])
     
+    ax2 = ax.twinx()
+    ax2.plot(tao2, gamma2, color='C1')
+    ax.plot(tao1, gamma1, color='C0')
+
+    ax.set_xlabel('Time delta [min]')
+    ax.set_ylabel('Autocorrelation first half [a.u.]')
+    ax2.set_ylabel('Autocorrelation second half [a.u.]')
+
+
 
 if __name__ == '__main__':
     bids = pd.DataFrame.from_csv(BID_FILENAME)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     # plot_cum_bids(ax, bids)
-    plot_bid_number_dist(ax, bids)
-    # plot_bid_amount_dist(ax, bids)
+    # plot_bid_dist(ax, bids)
+    plot_corr(ax, bids)
     plt.show()
