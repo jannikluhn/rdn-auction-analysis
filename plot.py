@@ -7,6 +7,8 @@ mpl.rcParams.update({'font.size': 14})
 
 
 BID_FILENAME = 'bids.csv'
+TX_FILENAME = 'txs.csv'
+RECEIPT_FILENAME = 'receipts.csv'
 
 
 def plot_cum_bids(ax, bids):
@@ -76,12 +78,43 @@ def plot_corr(ax, bids):
     ax2.set_ylabel('Autocorrelation second half [a.u.]')
 
 
+def plot_failed(ax, txs, receipts):
+    merged = pd.merge(txs, receipts, left_index=True, right_index=True)
+    failure_details = merged[['gasUsed', 'gas', 'status', 'input', 'value']]
+
+    passed = failure_details['status'] == 1
+    failed = failure_details['status'] == 0
+    zero_bid = failed & (failure_details['value'] == 0)
+    low_gas = (failed &
+               (failure_details['gas'] < 65000) &
+               (failure_details['gas'] == failure_details['gasUsed']))
+    other = failed & ~zero_bid & ~low_gas
+
+    ax.pie(
+        [sum(passed), sum(zero_bid), sum(low_gas), sum(other)],
+        labels=['passed', 'zero bid', 'low gas', 'other'],
+        colors=['darkgreen', 'tomato', 'maroon', 'tomato']
+    )
+    ax.axis('equal')
+
+def plot_learning_bidders(ax, bids, txs, receipts):
+    merged = pd.merge(txs, receipts, left_index=True, right_index=True)
+    failing_tx_hashes = merged[merged['status'] == 0].index
+    failing_bidders = set(merged.loc[failing_tx_hashes]['from'].unique())
+    succeeding_bidders = set(bids['sender'].unique())
+    forever_failing = failing_bidders - succeeding_bidders
+    import pudb.b
 
 if __name__ == '__main__':
     bids = pd.DataFrame.from_csv(BID_FILENAME)
+    txs = pd.DataFrame.from_csv(TX_FILENAME).set_index('hash')
+    receipts = pd.DataFrame.from_csv(RECEIPT_FILENAME).set_index('transactionHash')
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     # plot_cum_bids(ax, bids)
     # plot_bid_dist(ax, bids)
-    plot_corr(ax, bids)
+    # plot_corr(ax, bids)
+    # plot_failed(ax, txs, receipts)
+    plot_learning_bidders(ax, bids, txs, receipts)
     plt.show()
