@@ -38,6 +38,7 @@ def fetch_bids():
     start_events = log_filter.get(only_changes=False)
     assert len(start_events) == 1
     start_time = start_events[0]['args']['_start_time']
+    print(start_time)
 
     # get bid times
     blocks = df['block'].unique()

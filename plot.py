@@ -147,6 +147,7 @@ def plot_learning_bidders(ax, bids, txs, receipts):
 
 def plot_cum_hist(ax, bids):
     bidders = bids[['sender', 'amount']].groupby('sender').sum()
+    import pudb.b
     hist, bin_edges = np.histogram(bidders['amount'], bins=100)
     width = np.diff(bin_edges)
     ax.bar(bin_edges[:-1], hist, width=width, bottom=0.001)
@@ -162,12 +163,12 @@ if __name__ == '__main__':
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plot_cum_bids(ax, bids)
+    # plot_cum_bids(ax, bids)
     # plot_bid_dist(ax, bids)
     # plot_corr(ax, bids)
     # plot_failed(ax, txs, receipts)
     # plot_learning_bidders(ax, bids, txs, receipts)
     # print_summary(bids)
     # plot_lorenz(ax, bids)
-    # plot_cum_hist(ax, bids)
+    plot_cum_hist(ax, bids)
     plt.show()
