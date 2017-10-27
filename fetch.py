@@ -54,6 +54,28 @@ def fetch_bids():
     return sorted
 
 
+def fetch_receipts(bids):
+    receipts = []
+    for txhash in bids['txhash']:
+        receipt = web3.eth.getTransactionReceipt(txhash)
+        receipts.append(receipt)
+    receipt_df = pd.DataFrame({key: [receipt[key]
+                               for receipt in receipts] for key in receipts[0].keys()})
+    receipt_df = receipt_df.set_index('transactionHash')
+    return receipt_df
+
+def fetch_txs(bids):
+    txs = []
+    for txhash in bids['txhash']:
+        tx = dict(web3.eth.getTransaction(txhash))
+        tx['value'] = from_wei(tx['value'], 'ether')
+        txs.append(tx)
+    tx_df = pd.DataFrame({key: [tx[key]
+                          for tx in txs] for key in txs[0].keys()})
+    tx_df = tx_df.set_index('hash')
+    return tx_df
+
+
 # def fetch_txs(from_block, to_block):
 #     block_range = {'fromBlock': from_block, 'toBlock': to_block}
 #     block_numbers = range(from_block, to_block + 1)
@@ -79,7 +101,11 @@ def fetch_bids():
 
 if __name__ == '__main__':
     bids = fetch_bids()
+    receipts = fetch_receipts(bids)
+    txs = fetch_txs(bids)
     bids.to_csv(BID_OUTPUT_FILENAME)
+    receipts.to_csv(RECEIPT_OUTPUT_FILENAME)
+    txs.to_csv(TX_OUTPUT_FILENAME)
 
     # to_block = web3.eth.blockNumber
 
