@@ -57,12 +57,12 @@ def fig_bids(bids, bidders):
             name='Total amount',
             yaxis='y2'
         ),
-        go.Scatter(
-            x=time_bins,
-            y=mean_bid_amount,
-            name='mean bid amount',
-            yaxis='y1'
-        )
+        # go.Scatter(
+        #     x=time_bins,
+        #     y=mean_bid_amount,
+        #     name='mean bid amount',
+        #     yaxis='y1'
+        # )
     ]
     layout = go.Layout(
         title='RDN auction',
@@ -292,9 +292,9 @@ if __name__ == '__main__':
     bidders['n_bids'] = bids['sender'].value_counts()
 
     # py.plot(fig_avg(bids), filename='RDN average')
-    # py.plot(fig_bids(bids, bidders), filename='RDN bids')
+    py.plot(fig_bids(bids, bidders), filename='RDN bids')
     # py.plot(fig_rolling(bids), filename='RDN rolling')
-    py.plot(fig_bid_hist(bidders), filename='RDN bid hist')
+    # py.plot(fig_bid_hist(bidders), filename='RDN bid hist')
     # # py.plot(fig_repeated(bids, bidders), filename='RDN repeated bidders')
     # py.plot(fig_lorenz(bidders), filename='RDN lorenz')
     # py.plot(fig_gas_usage(bids, receipts), filename='RDN gas usage')
